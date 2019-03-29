@@ -2,7 +2,7 @@ var axios = require("axios");
 var Spotify = require("node-spotify-api");
 var moment = require("moment");
 var dotEnv = require("dotenv").config();
-var keys = require("./keys.js");
+var keys = require("./keys");
 var fs = require("fs"); 
 var spotify = new Spotify(keys.spotify);
 var mode = process.argv[2];
@@ -24,6 +24,7 @@ function concert(artist){
     })
 }
 function movie(title){
+    if(title==="") title="Mr Nobody";
     axios.get("http://www.omdbapi.com/?t="+title+"&plot=short&apikey=trilogy")
     .then(function(res){
         var info =res.data;
@@ -42,21 +43,32 @@ function movie(title){
     })
 }
 function song(name){
-    console.log(name);
-    spotify.search({ 
-        type: 'track', 
-        querry: input
-    },function(err,res){
-        if(err){
-            return console.log(err);
-        }
-        console.log(res);
+    if (name===""){ var name="the sign";}
+    spotify.search({ type: 'track', query: name}).then(function(res){
+        res.tracks.items.forEach(function(song){
+            var artists="";
+            song.album.artists.forEach(function(art){
+                artists=artists+art.name+" ";
+            })
+            console.log("Artist: "+artists);
+            console.log("Song: "+song.name);
+            console.log("Album: "+song.album.name);
+            console.log("Listen to this song here: "+song.preview_url);
+            console.log(" ")
+        });
     })
 }
 function readIn(){
-    console.log("input");
+    fs.readFile("random.txt","utf8",function(err,data){
+        //console.log(data);
+        var info = data.split(",");
+        mode=info[0]
+        if(input.length>1) input=info[1];
+        else input="";
+        main();
+    })
 }
-
+function main(){
 if (mode==="concert-this") concert(input);
 
 else if(mode==="spotify-this-song") song(input);
@@ -66,3 +78,5 @@ else if(mode==="movie-this") movie(input);
 else if(mode==="do-what-it-says") readIn();
 
 else console.log("invalid input");
+}
+main();
